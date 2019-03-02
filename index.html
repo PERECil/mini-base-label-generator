@@ -42,45 +42,85 @@ $( document ).ready( function( e )
         // Formula comes from http://mathforum.org/dr.math/faq/formulas/BuildFrustum.html
         let t = Math.atan( ( bigRadius / smallRadius ) / height );
         let sint = ( bigRadius - smallRadius ) / Math.sqrt (Math.pow( height, 2 ) + Math.pow( ( bigRadius - smallRadius ), 2 ) );
-        let bigCircleRadius = bigRadius / sint;
+        let innerRingRadius = bigRadius / sint;
 
         // Thickness of the label, in mm.
-        let thickness = bigCircleRadius - smallRadius / sint;
+        let thickness = innerRingRadius - smallRadius / sint;
 
         // Middle of the arc circle, in mm
-        let totalSize = bigCircleRadius + thickness / 2;
+        let centerRingRadius = innerRingRadius + thickness / 2;
 
         // Outer edge of the arc circle, in mm.        
-        let width = totalSize + thickness / 2;
+        let outerRingRadius = centerRingRadius + thickness / 2;
 
-        // Arc circle angle, in radians.
-        let angle = 2 * 3.141592635 * sint;
-
-        let circumference = 2 * 3.141592635 * totalSize;
+        let innerCircumference = 2 * 3.141592635 * innerRingRadius;
+        let centerCircumference = 2 * 3.141592635 * centerRingRadius;
+        let outerCircumference = 2 * 3.141592635 * outerRingRadius;
 
         // Why this weird constant? Dunno!!!
-        let weirdConstant = 3.666;
+        let weirdConstant = 3.64;
 
         // The total usage of the circumference should add the text length and two time the padding for left and right.
-        let dashFilledPart = ( kerning + padding * 2 ) * weirdConstant;
-        let dashUnfilledPart = circumference - dashFilledPart;
+        let centerDashFill = ( kerning + ( padding * 2 ) ) * weirdConstant;
+        let centerDashUnfill = centerCircumference - centerDashFill;
 
-        let viewBoxProperty = '0 0 ' + width * 2 + ' ' + width; 
+        // Ratio is an angle where 1 means full circle.
+        let ratio = centerDashFill / centerCircumference;
 
-        // return;
+        // Arc circle angle, in radians.
+        let angle = ratio * 2 * 3.141592635;
+
+        let innerDashFill = ratio * innerCircumference;
+        let innerDashUnfill = innerCircumference - innerDashFill;
+
+        let outerDashFill = ratio * outerCircumference;
+        let outerDashUnfill = outerCircumference - outerDashFill;
+
+        // As the ring has a thickness, we need to evaluate the outer and the inner ring to get the most width
+        let innerCanvasWidth = ( 2 - Math.cos( angle ) ) * innerRingRadius - innerRingRadius;
+        let outerCanvasWidth = ( 2 - Math.cos( angle ) ) * outerRingRadius - innerRingRadius;
+
+        let canvasWidth = Math.max( innerCanvasWidth, outerCanvasWidth );
+
+        let viewPortWidth = canvasWidth;
+        let viewPortHeight = outerRingRadius;
+
+        let viewBoxProperty = '0 0 ' + viewPortWidth + ' ' + viewPortHeight; 
+
+        let x_offset = -outerRingRadius;
 
         // Sets the size of the label to print, in mm.
-        $( '#label' ).css( 'width', width * 2 + 'mm' );
-        $( '#label' ).css( 'height', width + 'mm' );    
+        $( '#label' ).attr( 'width', viewPortWidth );
+        $( '#label' ).attr( 'height', viewPortHeight );
+        $( '#label' ).css( 'width', viewPortWidth + 'mm' );
+        $( '#label' ).css( 'height', viewPortHeight + 'mm' );    
 
         // Sets the view box property to the size of the label, in mm.
-        $( '#label' ).attr( 'viewBox', viewBoxProperty );
+        // $( '#label' ).attr( 'viewBox', viewBoxProperty );
 
         let contents = '';
 
-        contents += '<circle cx="' + -width + '" cy="' + 0 + '" r="' + totalSize + '" stroke-dasharray="' + dashFilledPart + ' ' + dashUnfilledPart + '" stroke="' + backgroundColor + '" stroke-width="' + thickness + '" fill="none" transform="scale(-1,1)" />';
-        contents += '<path id="curve" d="' + circle_to_path( width, 0, width - ( thickness / 8 ) ) + '" fill="transparent"></path>';
-        contents += '<text textLength="' + kerning + 'mm" fill="' + foregroundColor + '" style="font-family: impact; font-size: ' + ( thickness / 4 ) + 'mm;"><textPath xlink:href="#curve" startOffset="' + padding + 'mm">' + text + '</textPath></text>';
+        // Scale from https://stackoverflow.com/questions/30806126/drawing-svg-path-and-polygon-in-cm
+        contents += '<g transform="scale(3.543307)">';
+        contents += '   <circle cx="' + x_offset + '" cy="0" r="' + centerRingRadius + '" stroke-dasharray="' + centerDashFill + ' ' + centerDashUnfill + '" stroke="' + backgroundColor + '" stroke-width="' + thickness + '" fill="none" transform="scale(-1,1)" />';
+
+        if( false )
+        {
+            contents += '   <line x1="-1000" x2="1000" y1="0" y2="0" stroke-width="0.25" stroke="red" fill="none" />';
+            contents += '   <line x1="0" x2="0" y1="-1000" y2="1000" stroke-width="0.25" stroke="green" fill="none" />';        
+            contents += '   <circle cx="' + x_offset + '" cy="0" r="' + innerRingRadius + '" stroke-dasharray="' + innerDashFill + ' ' + innerDashUnfill + '" stroke="red" stroke-width="0.25" fill="none" transform="scale(-1,1)" />';                
+            contents += '   <circle cx="' + x_offset + '" cy="0" r="' + outerRingRadius + '" stroke-dasharray="' + outerDashFill + ' ' + outerDashUnfill + '" stroke="red" stroke-width="0.25" fill="none" transform="scale(-1,1)" />';        
+            contents += '   <path id="curve" d="' + circle_to_path( -x_offset, 0, outerRingRadius - ( thickness / 8 ) ) + '" stroke="white" stroke-width="0.25" fill="none"></path>';            
+        }
+        else
+        {
+            contents += '   <path id="curve" d="' + circle_to_path( -x_offset, 0, outerRingRadius - ( thickness / 8 ) ) + '" fill="none"></path>';            
+        }
+
+        contents += '   <text textLength="' + kerning + 'mm" fill="' + foregroundColor + '" style="font-family: impact; font-size: ' + ( thickness / 4 ) + 'mm;">';
+        contents += '       <textPath xlink:href="#curve" startOffset="' + padding + 'mm">' + text + '</textPath>';
+        contents += '   </text>';
+        contents += '</g>';
 
         document.getElementById( 'label' ).innerHTML = contents;
     };

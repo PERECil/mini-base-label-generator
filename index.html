@@ -77,10 +77,14 @@ $( document ).ready( function( e )
         let outerDashUnfill = outerCircumference - outerDashFill;
 
         // As the ring has a thickness, we need to evaluate the outer and the inner ring to get the most width
-        let innerCanvasWidth = ( 2 - Math.cos( angle ) ) * innerRingRadius - innerRingRadius;
-        let outerCanvasWidth = ( 2 - Math.cos( angle ) ) * outerRingRadius - innerRingRadius;
+        let innerCanvasWidth = ( 1 - Math.cos( angle ) ) * innerRingRadius + thickness;
+        let outerCanvasWidth = ( 1 - Math.cos( angle ) ) * outerRingRadius;
 
-        let canvasWidth = Math.max( innerCanvasWidth, outerCanvasWidth );
+        let weirdScaleFactorAgain = 0.94;
+
+        let canvasWidth = Math.max( innerCanvasWidth, outerCanvasWidth ) * weirdScaleFactorAgain;
+
+        console.log( 'inner ' + innerCanvasWidth + ' outer ' + outerCanvasWidth + ' width ' + canvasWidth );
 
         let viewPortWidth = canvasWidth;
         let viewPortHeight = outerRingRadius;
@@ -90,8 +94,8 @@ $( document ).ready( function( e )
         let x_offset = -outerRingRadius;
 
         // Sets the size of the label to print, in mm.
-        $( '#label' ).attr( 'width', viewPortWidth );
-        $( '#label' ).attr( 'height', viewPortHeight );
+        // $( '#label' ).attr( 'width', viewPortWidth );
+        // $( '#label' ).attr( 'height', viewPortHeight );
         $( '#label' ).css( 'width', viewPortWidth + 'mm' );
         $( '#label' ).css( 'height', viewPortHeight + 'mm' );    
 
@@ -111,6 +115,8 @@ $( document ).ready( function( e )
             contents += '   <circle cx="' + x_offset + '" cy="0" r="' + innerRingRadius + '" stroke-dasharray="' + innerDashFill + ' ' + innerDashUnfill + '" stroke="red" stroke-width="0.25" fill="none" transform="scale(-1,1)" />';                
             contents += '   <circle cx="' + x_offset + '" cy="0" r="' + outerRingRadius + '" stroke-dasharray="' + outerDashFill + ' ' + outerDashUnfill + '" stroke="red" stroke-width="0.25" fill="none" transform="scale(-1,1)" />';        
             contents += '   <path id="curve" d="' + circle_to_path( -x_offset, 0, outerRingRadius - ( thickness / 8 ) ) + '" stroke="white" stroke-width="0.25" fill="none"></path>';            
+            contents += '   <line x1="' + innerCanvasWidth + '" x2="' + innerCanvasWidth + '" y1="-1000" y2="+1000" stroke-width="0.25" stroke="grey" fill="none" />';            
+            contents += '   <line x1="' + outerCanvasWidth + '" x2="' + outerCanvasWidth + '" y1="-1000" y2="+1000" stroke-width="0.25" stroke="grey" fill="none" />';                                                            
         }
         else
         {
@@ -156,10 +162,12 @@ $( document ).ready( function( e )
 
     svg
     {
+        /* background-clip: content-box; */
         background-color: white;
-        border: 1px solid black;
-        padding: 5px;
-        transform: scale(1);
+        /* border: 1px solid black; */
+        box-sizing: content-box;
+        /* padding: 5px; */
+        /* transform: scale(1); */
     }
 }
 

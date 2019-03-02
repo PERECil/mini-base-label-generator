@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+        <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+        <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+        <script type="text/javascript">
+$( document ).ready( function( e )
+{
+    // Source: http://complexdan.com/svg-circleellipse-to-path-converter/
+    var circle_to_path = function( cx, cy, r )
+    {
+		var output = "M" + ( cx - r ).toString() + "," + cy.toString();
+
+		output += "a" + r.toString() + "," + r.toString() + " 0 1,0 " + ( 2 * r ).toString() + ",0";
+		output += "a" + r.toString() + "," + r.toString() + " 0 1,0 " + ( -2 * r ).toString() + ",0";
+		
+        return output;
+    };
+
+    var render_label = function()
+    {
+        // Fetch params from the form
+        
+        // Big (bottom) radius of the base, in mm.
+        let bigRadius = parseFloat( $( '#base-big-diameter' ).val() ) / 2;
+
+        // Small (top) radius of the base, in mm.        
+        let smallRadius = parseFloat( $( '#base-small-diameter' ).val() ) / 2;
+
+        // Height of the base, in mm.        
+        let height = parseFloat( $( '#base-height' ).val() );
+
+        let text = $( '#text' ).val();
+        let kerning = parseFloat( $( '#kerning' ).val() );
+        let padding = parseFloat( $( '#padding' ).val() ); 
+
+        let backgroundColor = $( '#bg-color' ).val();
+        let foregroundColor = $( '#fg-color' ).val();
+
+        // Formula comes from http://mathforum.org/dr.math/faq/formulas/BuildFrustum.html
+        let t = Math.atan( ( bigRadius / smallRadius ) / height );
+        let sint = ( bigRadius - smallRadius ) / Math.sqrt (Math.pow( height, 2 ) + Math.pow( ( bigRadius - smallRadius ), 2 ) );
+        let bigCircleRadius = bigRadius / sint;
+
+        // Thickness of the label, in mm.
+        let thickness = bigCircleRadius - smallRadius / sint;
+
+        // Middle of the arc circle, in mm
+        let totalSize = bigCircleRadius + thickness / 2;
+
+        // Outer edge of the arc circle, in mm.        
+        let width = totalSize + thickness / 2;
+
+        // Arc circle angle, in radians.
+        let angle = 2 * 3.141592635 * sint;
+
+        let circumference = 2 * 3.141592635 * totalSize;
+
+        // Why this weird constant? Dunno!!!
+        let weirdConstant = 3.666;
+
+        // The total usage of the circumference should add the text length and two time the padding for left and right.
+        let dashFilledPart = ( kerning + padding * 2 ) * weirdConstant;
+        let dashUnfilledPart = circumference - dashFilledPart;
+
+        let viewBoxProperty = '0 0 ' + width * 2 + ' ' + width; 
+
+        // return;
+
+        // Sets the size of the label to print, in mm.
+        $( '#label' ).css( 'width', width * 2 + 'mm' );
+        $( '#label' ).css( 'height', width + 'mm' );    
+
+        // Sets the view box property to the size of the label, in mm.
+        $( '#label' ).attr( 'viewBox', viewBoxProperty );
+
+        let contents = '';
+
+        contents += '<circle cx="' + -width + '" cy="' + 0 + '" r="' + totalSize + '" stroke-dasharray="' + dashFilledPart + ' ' + dashUnfilledPart + '" stroke="' + backgroundColor + '" stroke-width="' + thickness + '" fill="none" transform="scale(-1,1)" />';
+        contents += '<path id="curve" d="' + circle_to_path( width, 0, width - ( thickness / 8 ) ) + '" fill="transparent"></path>';
+        contents += '<text textLength="' + kerning + 'mm" fill="' + foregroundColor + '" style="font-family: impact; font-size: ' + ( thickness / 4 ) + 'mm;"><textPath xlink:href="#curve" startOffset="' + padding + 'mm">' + text + '</textPath></text>';
+
+        document.getElementById( 'label' ).innerHTML = contents;
+    };
+
+    $( '#text, #base-small-diameter, #base-height, #base-big-diameter' ).on( 'change keyup blur', function( e )
+    {
+        render_label();
+    });
+
+    // Hook when changing the kerning, update the label.
+    $( '#kerning, #padding' ).on( 'mousedown mousemove change', function( e )
+    {
+        render_label();
+    });
+
+    // Hook when changing the color, update the label.
+    $( '#fg-color, #bg-color' ).on( 'change', function( e )
+    {
+        render_label();
+    });
+
+    // Upon init, render the first label
+    render_label();
+});        
+        </script>
+        <style>
+@media screen
+{
+    body
+    {
+        background-color: lightgrey;
+    }        
+
+    svg
+    {
+        background-color: white;
+        border: 1px solid black;
+        padding: 5px;
+        transform: scale(1);
+    }
+}
+
+@media print
+{
+    h1,
+    form
+    {
+        display: none;
+    }
+
+    svg
+    {
+        padding: 1cm;
+    }
+}
+        </style>
+    </head>
+    <body>
+        <h1>Base label generator</h1>
+        <svg id="label"></svg>
+        <form id="controls">
+            <h2>Base parameters</h2>
+            <div>
+                <input type="text" id="base-big-diameter" name="base_big_diameter" value="25.4" placeholder="25.4"/>
+                <label for="text">Base's small diameter (top), in mm.</label>
+            </div>                                     
+            <div>
+                <input type="text" id="base-small-diameter" name="base_small_diameter" value="23.0" placeholder="23"/>
+                <label for="text">Base's big diameter (bottom), in mm.</label>
+            </div>  
+            <div>
+                <input type="text" id="base-height" name="base_height" value="3.2" placeholder="3.2"/>
+                <label for="text">Base's height, in mm.</label>
+            </div>
+            <h2>Text parameters</h2> 
+            <div>
+                <input type="color" id="bg-color" name="bg_color" value="#000000" />
+                <label for="bg-color">Background color</label>
+            </div>    
+            <div>
+                    <input type="color" id="fg-color" name="fg_color" value="#ffffff" />
+                    <label for="bg-color">Foreground color</label>
+                </div>                                                           
+            <div>
+                <input type="text" id="text" name="name" placeholder="Type the unit name here"/>
+                <label for="text">Text</label>
+            </div>               
+            <div>
+                    <input type="range" id="padding" name="volume" min="0" max="5" step="0.05" />
+                    <label for="padding">Padding</label>
+                </div>               
+            <div>
+                <input type="range" id="kerning" name="volume" min="5" max="20" step="0.1" />
+                <label for="kerning">Kerning</label>
+            </div>           
+        </form>
+    </body>
+</html>

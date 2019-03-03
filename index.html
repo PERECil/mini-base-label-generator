@@ -42,6 +42,7 @@ $( document ).ready( function( e )
         // Height of the base, in mm.        
         let height = parseFloat( $( element ).attr( 'data-height' ) );
 
+        let fontFace = $( element ).attr( 'data-font-face' );
         let text = $( element ).attr( 'data-text' );
         let kerning = parseFloat( $( element ).attr( 'data-kerning' ) );
         let padding = parseFloat(  $( element ).attr( 'data-padding' ) ); 
@@ -58,7 +59,7 @@ $( document ).ready( function( e )
         let thickness = innerRingRadius - smallRadius / sint;
 
         // textSize in px
-        let textSize = compute_width( text, 'Impact', ( thickness / 4 ) + 'mm' );
+        let textSize = compute_width( text, fontFace, ( thickness / 4 ) + 'mm' );
 
         console.log( textSize );
 
@@ -101,7 +102,7 @@ $( document ).ready( function( e )
         let innerCanvasWidth = ( 1 - Math.cos( angle ) ) * innerRingRadius + thickness;
         let outerCanvasWidth = ( 1 - Math.cos( angle ) ) * outerRingRadius;
 
-        let weirdScaleFactorAgain = 0.94;
+        let weirdScaleFactorAgain = 0.95;
 
         let canvasWidth = Math.max( innerCanvasWidth, outerCanvasWidth ) * weirdScaleFactorAgain;
 
@@ -142,7 +143,7 @@ $( document ).ready( function( e )
             contents += '   <path id="curve" d="' + circle_to_path( -x_offset, 0, outerRingRadius - ( thickness / 8 ) ) + '" fill="none"></path>';            
         }
 
-        contents += '   <text textLength="' + fullTextSizeMm + '" fill="' + foregroundColor + '" style="font-family: impact; font-size: ' + ( thickness / 4 ) + 'mm;">';
+        contents += '   <text lengthAdjust="spacing" textLength="' + fullTextSizeMm + '" fill="' + foregroundColor + '" style="font-family: ' + fontFace + '; font-size: ' + ( thickness / 4 ) + 'mm;">';
         contents += '       <textPath xlink:href="#curve" startOffset="' + ( padding + kerning ) + '">' + text + '</textPath>';
         contents += '   </text>';
         contents += '</g>';
@@ -161,6 +162,7 @@ $( document ).ready( function( e )
         // Height of the base, in mm.        
         let height = parseFloat( $( '#base-height' ).val() );
 
+        let fontFace = $( '#font-face' ).val();
         let text = $( '#text' ).val();
         let kerning = parseFloat( $( '#kerning' ).val() );
         let padding = parseFloat( $( '#padding' ).val() ); 
@@ -173,6 +175,7 @@ $( document ).ready( function( e )
         $( element ).attr( 'data-small-diameter', smallRadius * 2);        
         $( element ).attr( 'data-height', height );
 
+        $( element ).attr( 'data-font-face', fontFace );      
         $( element ).attr( 'data-text', text );              
         $( element ).attr( 'data-kerning', kerning );        
         $( element ).attr( 'data-padding', padding );      
@@ -190,6 +193,7 @@ $( document ).ready( function( e )
         let smallRadius = parseFloat( $( element ).attr( 'data-small-diameter' ) ) / 2;        
         let height = parseFloat( $( element ).attr( 'data-height' ) );         
 
+        let fontFace = $( element ).attr( 'data-font-face' );
         let text = $( element ).attr( 'data-text' );              
         let kerning = parseFloat( $( element ).attr( 'data-kerning' ) );        
         let padding = parseFloat( $( element ).attr( 'data-padding' ) );                
@@ -201,6 +205,7 @@ $( document ).ready( function( e )
         $( '#base-small-diameter' ).val( smallRadius * 2 );
         $( '#base-height' ).val( height );
 
+        $( '#font-face' ).val( fontFace );
         $( '#text' ).val( text );
         $( '#kerning' ).val( kerning );
         $( '#padding' ).val( padding );
@@ -313,9 +318,14 @@ $( document ).ready( function( e )
 
 @media all
 {
+    @font-face 
+    {            
+        font-family: tau;
+        src: url("fonts/Tau.otf") format("opentype");
+    }
+
     #labels
     {    
-        padding: 0.5cm;
     }
 
     #labels::after
@@ -329,7 +339,6 @@ $( document ).ready( function( e )
     {        
         display: block;
         float: left;
-        margin: 0.5cm;
         text-align: center;
     }
 
@@ -354,7 +363,8 @@ $( document ).ready( function( e )
 
     #labels
     {
-        background-color: white;        
+        background-color: white;
+        padding: 0.5cm;                
     }
 
     #size-computer
@@ -373,6 +383,7 @@ $( document ).ready( function( e )
         border-radius: 5px;        
         box-shadow: 0 0 5px rgba( 0, 0, 0, 0.2 );
         display: inline-block;
+        margin: 0.5cm;        
         padding: 5px;
         text-align: center;
     }
@@ -448,7 +459,7 @@ $( document ).ready( function( e )
 {
     @page
     {
-        margin: 0;
+        margin: 0.5cm;
         padding: 0;
     }
 
@@ -508,9 +519,16 @@ $( document ).ready( function( e )
                     <label for="bg-color">Background color</label>
                 </div>    
                 <div>
-                        <input type="color" id="fg-color" name="fg_color" value="#ffffff" />
-                        <label for="bg-color">Foreground color</label>
-                    </div>                                                           
+                    <input type="color" id="fg-color" name="fg_color" value="#ffffff" />
+                    <label for="bg-color">Foreground color</label>
+                </div> 
+                <div>
+                    <select id="font-face" name="font_face" value="Impact">
+                        <option value="Impact">Impact</option>
+                        <option value="Tau">Tau</option>
+                    </select>
+                    <label for="bg-color">Font face</label>
+                </div>                                                                          
                 <div>
                     <input type="text" id="text" name="name" placeholder="Type the unit name here"/>
                     <label for="text">Text</label>

@@ -19,25 +19,35 @@ $( document ).ready( function( e )
         return output;
     };
 
-    var render_label = function()
+    // Source: https://stackoverflow.com/questions/118241/calculate-text-width-with-javascript
+    var compute_width = function( text, fontFamily, fontSize )
+    {
+        $( '#size-computer' ).css( 'font-family', fontFamily );
+        $( '#size-computer' ).css( 'font-size', fontSize );
+        $( '#size-computer' ).html( text );
+
+        return $( '#size-computer' ).width();
+    };
+
+    var render_label = function( element )
     {
         // Fetch params from the form
         
         // Big (bottom) radius of the base, in mm.
-        let bigRadius = parseFloat( $( '#base-big-diameter' ).val() ) / 2;
+        let bigRadius = parseFloat( $( element ).attr( 'data-big-diameter' ) ) / 2;
 
         // Small (top) radius of the base, in mm.        
-        let smallRadius = parseFloat( $( '#base-small-diameter' ).val() ) / 2;
+        let smallRadius = parseFloat( $( element ).attr( 'data-small-diameter' ) ) / 2;
 
         // Height of the base, in mm.        
-        let height = parseFloat( $( '#base-height' ).val() );
+        let height = parseFloat( $( element ).attr( 'data-height' ) );
 
-        let text = $( '#text' ).val();
-        let kerning = parseFloat( $( '#kerning' ).val() );
-        let padding = parseFloat( $( '#padding' ).val() ); 
+        let text = $( element ).attr( 'data-text' );
+        let kerning = parseFloat( $( element ).attr( 'data-kerning' ) );
+        let padding = parseFloat(  $( element ).attr( 'data-padding' ) ); 
 
-        let backgroundColor = $( '#bg-color' ).val();
-        let foregroundColor = $( '#fg-color' ).val();
+        let backgroundColor = $( element ).attr( 'data-background-color' );
+        let foregroundColor = $( element ).attr( 'data-foreground-color' );                
 
         // Formula comes from http://mathforum.org/dr.math/faq/formulas/BuildFrustum.html
         let t = Math.atan( ( bigRadius / smallRadius ) / height );
@@ -46,6 +56,17 @@ $( document ).ready( function( e )
 
         // Thickness of the label, in mm.
         let thickness = innerRingRadius - smallRadius / sint;
+
+        // textSize in px
+        let textSize = compute_width( text, 'Impact', ( thickness / 4 ) + 'mm' );
+
+        console.log( textSize );
+
+        // textSize in mm, using the "magic" constant
+        let textSizeMm = textSize; // * 3.543307;
+
+        // Add the kerning per letter, and the full text size
+        let fullTextSizeMm = textSizeMm + kerning * text.length;
 
         // Middle of the arc circle, in mm
         let centerRingRadius = innerRingRadius + thickness / 2;
@@ -58,10 +79,10 @@ $( document ).ready( function( e )
         let outerCircumference = 2 * 3.141592635 * outerRingRadius;
 
         // Why this weird constant? Dunno!!!
-        let weirdConstant = 3.64;
+        let weirdConstant = 3;
 
         // The total usage of the circumference should add the text length and two time the padding for left and right.
-        let centerDashFill = ( kerning + ( padding * 2 ) ) * weirdConstant;
+        let centerDashFill = fullTextSizeMm + ( padding * 2 );
         let centerDashUnfill = centerCircumference - centerDashFill;
 
         // Ratio is an angle where 1 means full circle.
@@ -83,8 +104,6 @@ $( document ).ready( function( e )
         let weirdScaleFactorAgain = 0.94;
 
         let canvasWidth = Math.max( innerCanvasWidth, outerCanvasWidth ) * weirdScaleFactorAgain;
-
-        console.log( 'inner ' + innerCanvasWidth + ' outer ' + outerCanvasWidth + ' width ' + canvasWidth );
 
         let viewPortWidth = canvasWidth;
         let viewPortHeight = outerRingRadius;
@@ -114,45 +133,218 @@ $( document ).ready( function( e )
             contents += '   <line x1="0" x2="0" y1="-1000" y2="1000" stroke-width="0.25" stroke="green" fill="none" />';        
             contents += '   <circle cx="' + x_offset + '" cy="0" r="' + innerRingRadius + '" stroke-dasharray="' + innerDashFill + ' ' + innerDashUnfill + '" stroke="red" stroke-width="0.25" fill="none" transform="scale(-1,1)" />';                
             contents += '   <circle cx="' + x_offset + '" cy="0" r="' + outerRingRadius + '" stroke-dasharray="' + outerDashFill + ' ' + outerDashUnfill + '" stroke="red" stroke-width="0.25" fill="none" transform="scale(-1,1)" />';        
-            contents += '   <path id="curve" d="' + circle_to_path( -x_offset, 0, outerRingRadius - ( thickness / 8 ) ) + '" stroke="white" stroke-width="0.25" fill="none"></path>';            
             contents += '   <line x1="' + innerCanvasWidth + '" x2="' + innerCanvasWidth + '" y1="-1000" y2="+1000" stroke-width="0.25" stroke="grey" fill="none" />';            
             contents += '   <line x1="' + outerCanvasWidth + '" x2="' + outerCanvasWidth + '" y1="-1000" y2="+1000" stroke-width="0.25" stroke="grey" fill="none" />';                                                            
+            contents += '   <path id="curve" d="' + circle_to_path( -x_offset, 0, outerRingRadius - ( thickness / 8 ) ) + '" stroke="white" stroke-width="0.25" fill="none"></path>';                        
         }
         else
         {
             contents += '   <path id="curve" d="' + circle_to_path( -x_offset, 0, outerRingRadius - ( thickness / 8 ) ) + '" fill="none"></path>';            
         }
 
-        contents += '   <text textLength="' + kerning + 'mm" fill="' + foregroundColor + '" style="font-family: impact; font-size: ' + ( thickness / 4 ) + 'mm;">';
-        contents += '       <textPath xlink:href="#curve" startOffset="' + padding + 'mm">' + text + '</textPath>';
+        contents += '   <text textLength="' + fullTextSizeMm + '" fill="' + foregroundColor + '" style="font-family: impact; font-size: ' + ( thickness / 4 ) + 'mm;">';
+        contents += '       <textPath xlink:href="#curve" startOffset="' + ( padding + kerning ) + '">' + text + '</textPath>';
         contents += '   </text>';
         contents += '</g>';
 
         document.getElementById( 'label' ).innerHTML = contents;
     };
 
+    var update_label_parameters = function( element )
+    {
+        // Big (bottom) radius of the base, in mm.
+        let bigRadius = parseFloat( $( '#base-big-diameter' ).val() ) / 2;
+
+        // Small (top) radius of the base, in mm.        
+        let smallRadius = parseFloat( $( '#base-small-diameter' ).val() ) / 2;
+
+        // Height of the base, in mm.        
+        let height = parseFloat( $( '#base-height' ).val() );
+
+        let text = $( '#text' ).val();
+        let kerning = parseFloat( $( '#kerning' ).val() );
+        let padding = parseFloat( $( '#padding' ).val() ); 
+
+        let backgroundColor = $( '#bg-color' ).val();
+        let foregroundColor = $( '#fg-color' ).val();
+
+        // Copy the parameters as attributes to the SVG
+        $( element ).attr( 'data-big-diameter', bigRadius * 2);
+        $( element ).attr( 'data-small-diameter', smallRadius * 2);        
+        $( element ).attr( 'data-height', height );
+
+        $( element ).attr( 'data-text', text );              
+        $( element ).attr( 'data-kerning', kerning );        
+        $( element ).attr( 'data-padding', padding );      
+
+        $( element ).attr( 'data-background-color', backgroundColor );                                
+        $( element ).attr( 'data-foreground-color', foregroundColor );
+
+        render_label( element );
+    };    
+
+    var restore_label_parameters = function( element )
+    {
+        // Copy the parameters to the form
+        let bigRadius = parseFloat( $( element ).attr( 'data-big-diameter' ) ) / 2;
+        let smallRadius = parseFloat( $( element ).attr( 'data-small-diameter' ) ) / 2;        
+        let height = parseFloat( $( element ).attr( 'data-height' ) );         
+
+        let text = $( element ).attr( 'data-text' );              
+        let kerning = parseFloat( $( element ).attr( 'data-kerning' ) );        
+        let padding = parseFloat( $( element ).attr( 'data-padding' ) );                
+                     
+        let backgroundColor = $( element ).attr( 'data-background-color' );                                
+        let foregroundColor = $( element ).attr( 'data-foreground-color' );
+
+        $( '#base-big-diameter' ).val( bigRadius * 2 );
+        $( '#base-small-diameter' ).val( smallRadius * 2 );
+        $( '#base-height' ).val( height );
+
+        $( '#text' ).val( text );
+        $( '#kerning' ).val( kerning );
+        $( '#padding' ).val( padding );
+
+        $( '#bg-color' ).val( backgroundColor );
+        $( '#fg-color' ).val( foregroundColor );
+    };
+
+    // Duplicate button
+    $( '#labels' ).on( 'click', '.duplicate', function( e )
+    {
+        $( '#labels' ).append( $( this ).closest( '.label-container' ).clone() );
+    });
+
+    // Edit button
+    $( '#labels' ).on( 'click', '.edit', function( e )
+    {
+        console.log( $( this ).closest( '.label-container' ).index() );
+
+        $( '#controls' ).attr( 'element-index',  $( this ).closest( '.label-container' ).index() );
+
+        restore_label_parameters( $( this ).closest( '.label-container' ).find( 'svg' ) );
+
+        $( '#overlay' ).css( 'display', 'block' );         
+    });    
+
+    // Remove button
+    $( '#labels' ).on( 'click', '.delete', function( e )
+    {
+        $( this ).closest( '.label-container' ).remove();
+    });    
+
+    // Add button
+    $( '#add-button' ).on( 'click', function( e ){
+
+        $( '#controls' ).removeAttr( 'element-index' );
+
+        update_label_parameters( '#label' );  
+        render_label( '#label' );
+
+        $( '#overlay' ).css( 'display', 'block' );   
+    });
+
+    /* Form code ------------------------------------------------------------ */
+
+    $( '#controls .ok' ).on( 'click', function( e )
+    {
+        e.preventDefault();
+
+        let elementIndex = $( '#controls' ).attr( 'element-index' );
+
+        // no element index, that means a new label
+        // From: https://stackoverflow.com/questions/1318076/jquery-hasattr-checking-to-see-if-there-is-an-attribute-on-an-element
+        if( typeof elementIndex === typeof undefined || elementIndex === false )
+        {
+            let contents = '';
+
+            contents += '<div class="label-container">';
+            contents += '    <div class="svg-container"><svg></svg></div>';
+            contents += '    <div class="button-group">';
+            contents += '        <button class="duplicate" title="Duplicate">D</button>';              
+            contents += '        <button class="edit" title="Edit">E</button>';
+            contents += '         <button class="delete" title="Remove">X</button>';
+            contents += '    </div>';
+            contents += '</div>';
+
+            $( '#labels' ).append( contents );
+
+            $( '#controls' ).attr( 'element-index', $( '#labels .label-container' ).length - 1 );   
+        }
+
+        $( '#labels .label-container:eq(' + $( '#controls' ).attr( 'element-index' ) + ') .svg-container' ).html( $( '#controls .svg-container' ).html() );
+
+        $( '#labels .label-container:eq(' + $( '#controls' ).attr( 'element-index' ) + ') .svg-container svg' ).removeAttr( 'id' );
+
+        $( '#overlay' ).css( 'display', 'none' );        
+    });
+
+    $( '#controls .cancel' ).on( 'click', function( e )
+    {
+        e.preventDefault();
+
+        $( '#overlay' ).css( 'display', 'none' );
+    });    
+
+
+    // hook when changing text fields
     $( '#text, #base-small-diameter, #base-height, #base-big-diameter' ).on( 'change keyup blur', function( e )
     {
-        render_label();
+        update_label_parameters( '#label' );        
+        render_label( '#label' );
     });
 
     // Hook when changing the kerning, update the label.
     $( '#kerning, #padding' ).on( 'mousedown mousemove change', function( e )
     {
-        render_label();
+        update_label_parameters( '#label' );        
+        render_label( '#label' );        
     });
 
     // Hook when changing the color, update the label.
     $( '#fg-color, #bg-color' ).on( 'change', function( e )
     {
-        render_label();
+        update_label_parameters( '#label' );        
+        render_label( '#label' );        
     });
-
-    // Upon init, render the first label
-    render_label();
 });        
         </script>
         <style>
+
+@media all
+{
+    #labels
+    {    
+        padding: 0.5cm;
+    }
+
+    #labels::after
+    {
+        display: block;
+        content: "";
+        clear: both;
+    }
+
+    .label-container
+    {        
+        display: block;
+        float: left;
+        margin: 0.5cm;
+        text-align: center;
+    }
+
+    .label-container svg
+    {      
+        box-sizing: content-box;
+        display: inline-block;
+    }    
+
+    #overlay
+    {      
+        display: none;
+    }
+}
+
 @media screen
 {
     body
@@ -160,70 +352,183 @@ $( document ).ready( function( e )
         background-color: lightgrey;
     }        
 
-    svg
+    #labels
     {
-        /* background-clip: content-box; */
+        background-color: white;        
+    }
+
+    #size-computer
+    {
+        font-family: impact;
+        position: absolute;
+        visibility: hidden;
+        height: auto;
+        width: auto;
+        white-space: nowrap;      
+    }
+
+    .label-container
+    {
+        background-color: white;     
+        border-radius: 5px;        
+        box-shadow: 0 0 5px rgba( 0, 0, 0, 0.2 );
+        display: inline-block;
+        padding: 5px;
+        text-align: center;
+    }
+
+    .label-container .button-group
+    {
+        text-align: center;
+    }
+
+    .label-container button
+    {
+        border: 0 none;        
+        display: inline-block;
+        font-weight: 700;
+        height: 2em;
+        width: 2em;
+    }
+
+    .label-container svg
+    {
+        background-color: inherit;        
+    }
+
+    #overlay 
+    {
+        background-color: rgba( 0, 0, 0, 0.5 );        
+        height: 100%;
+        left: 0;
+        position: fixed;
+        top: 0;
+        width: 100%;
+
+        text-align: center;
+
+        /* May want to do this if there is risk the container may be narrower than the element inside */
+        white-space: nowrap;
+    }
+ 
+    /* The ghost, nudged to maintain perfect centering */
+    #overlay:before 
+    {
+        content: '';
+        display: inline-block;
+        height: 100%;
+        vertical-align: middle;
+        margin-right: -0.25em; /* Adjusts for spacing */
+    }
+
+    /* The element to be centered, can also be of any width and height */ 
+    #controls 
+    {
         background-color: white;
-        /* border: 1px solid black; */
-        box-sizing: content-box;
-        /* padding: 5px; */
-        /* transform: scale(1); */
+        display: inline-block;
+        padding: 10px;
+        text-align: left;
+        vertical-align: middle;
+        width: 560px;
+    }
+
+    #controls svg
+    {
+        display: block;
+        margin: 0 auto;
+    }
+
+    #controls .button-group
+    {
+        text-align: center;
     }
 }
 
 @media print
 {
+    @page
+    {
+        margin: 0;
+        padding: 0;
+    }
+
+    html,
+    body
+    {
+        margin: 0;
+        padding: 0;
+    }
+
     h1,
-    form
+    #overlay
     {
         display: none;
     }
 
-    svg
+    .button-group
     {
-        padding: 1cm;
+        display: none;
+    }
+
+    #size-computer
+    {
+        display: none;
     }
 }
         </style>
     </head>
     <body>
-        <h1>Base label generator</h1>
-        <svg id="label"></svg>
-        <form id="controls">
-            <h2>Base parameters</h2>
-            <div>
-                <input type="text" id="base-big-diameter" name="base_big_diameter" value="25.4" placeholder="25.4"/>
-                <label for="text">Base's big diameter (bottom), in mm.</label>
-            </div>                                     
-            <div>
-                <input type="text" id="base-small-diameter" name="base_small_diameter" value="23.0" placeholder="23"/>
-                <label for="text">Base's small diameter (top), in mm.</label>
-            </div>  
-            <div>
-                <input type="text" id="base-height" name="base_height" value="3.2" placeholder="3.2"/>
-                <label for="text">Base's height, in mm.</label>
-            </div>
-            <h2>Text parameters</h2> 
-            <div>
-                <input type="color" id="bg-color" name="bg_color" value="#000000" />
-                <label for="bg-color">Background color</label>
-            </div>    
-            <div>
-                    <input type="color" id="fg-color" name="fg_color" value="#ffffff" />
-                    <label for="bg-color">Foreground color</label>
-                </div>                                                           
-            <div>
-                <input type="text" id="text" name="name" placeholder="Type the unit name here"/>
-                <label for="text">Text</label>
-            </div>               
-            <div>
-                    <input type="range" id="padding" name="volume" min="0" max="5" step="0.05" />
-                    <label for="padding">Padding</label>
+        <h1>
+            <span>Base label generator</span>
+            <button id="add-button">Add</button>
+        </h1>
+        <div id="labels">
+        </div>
+        <div id="overlay">
+            <form id="controls">
+                <div class="svg-container">
+                    <svg id="label"></svg>            
+                </div>
+                <h2>Base parameters</h2>
+                <div>
+                    <input type="text" id="base-big-diameter" name="base_big_diameter" value="25.4" placeholder="25.4"/>
+                    <label for="text">Base's big diameter (bottom), in mm.</label>
+                </div>                                     
+                <div>
+                    <input type="text" id="base-small-diameter" name="base_small_diameter" value="23.0" placeholder="23"/>
+                    <label for="text">Base's small diameter (top), in mm.</label>
+                </div>  
+                <div>
+                    <input type="text" id="base-height" name="base_height" value="3.2" placeholder="3.2"/>
+                    <label for="text">Base's height, in mm.</label>
+                </div>
+                <h2>Text parameters</h2> 
+                <div>
+                    <input type="color" id="bg-color" name="bg_color" value="#000000" />
+                    <label for="bg-color">Background color</label>
+                </div>    
+                <div>
+                        <input type="color" id="fg-color" name="fg_color" value="#ffffff" />
+                        <label for="bg-color">Foreground color</label>
+                    </div>                                                           
+                <div>
+                    <input type="text" id="text" name="name" placeholder="Type the unit name here"/>
+                    <label for="text">Text</label>
                 </div>               
-            <div>
-                <input type="range" id="kerning" name="volume" min="5" max="20" step="0.1" />
-                <label for="kerning">Kerning</label>
-            </div>           
-        </form>
+                <div>
+                        <input type="range" id="padding" name="volume" min="0" max="5" step="0.05" />
+                        <label for="padding">Padding</label>
+                    </div>               
+                <div>
+                    <input type="range" id="kerning" name="volume" min="0" max="5" step="0.05" />
+                    <label for="kerning">Kerning</label>
+                </div>
+                <div class="button-group">
+                    <button class="ok">OK</button>
+                    <button class="cancel">Cancel</button>
+                </div>
+            </form>
+        </div>
+        <div id="size-computer"></div>
     </body>
 </html>

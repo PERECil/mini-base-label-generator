@@ -314,6 +314,7 @@ $( document ).ready( function( e )
     });
 });        
         </script>
+        <link href="https://fonts.googleapis.com/css?family=Permanent+Marker" rel="stylesheet"> 
         <style>
 
 @media all
@@ -354,7 +355,7 @@ $( document ).ready( function( e )
     }
 }
 
-@media screen
+@media all
 {
     body
     {
@@ -466,10 +467,11 @@ $( document ).ready( function( e )
     html,
     body
     {
+        background-color: white;
         margin: 0;
         padding: 0;
     }
-
+ 
     h1,
     #overlay
     {
@@ -525,7 +527,8 @@ $( document ).ready( function( e )
                 <div>
                     <select id="font-face" name="font_face" value="Impact">
                         <option value="Impact">Impact</option>
-                        <option value="Tau">Tau</option>
+                        <option value="Tau" class="web-font">Tau</option>
+                        <option value="Permanent Marker" class="web-font">Permanent Marker</option>
                     </select>
                     <label for="bg-color">Font face</label>
                 </div>                                                                          

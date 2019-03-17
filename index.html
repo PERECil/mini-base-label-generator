@@ -312,6 +312,54 @@ $( document ).ready( function( e )
         update_label_parameters( '#label' );        
         render_label( '#label' );        
     });
+
+    // Handle base preselection
+    $( '#base-preselection' ).on( 'change', function( e )
+    {
+        let baseBigDiameter = $( '#base-preselection option:selected' ).attr( 'data-base-big-diameter' );
+        let baseSmallDiameter = $( '#base-preselection option:selected' ).attr( 'data-base-small-diameter' );        
+        let baseHeight = $( '#base-preselection option:selected' ).attr( 'data-base-height' );
+        let hasMissingParameter = false;
+
+        // From: https://stackoverflow.com/questions/1318076/jquery-hasattr-checking-to-see-if-there-is-an-attribute-on-an-element
+        if( typeof baseBigDiameter !== typeof undefined && baseBigDiameter !== false )
+        {
+            $( '#base-big-diameter' ).val( baseBigDiameter );
+        }
+        else
+        {
+            $( '#base-big-diameter' ).val( '' );                        
+            hasMissingParameter = true;
+        }
+
+        if( typeof baseSmallDiameter !== typeof undefined && baseSmallDiameter !== false )
+        {
+            $( '#base-small-diameter' ).val( baseSmallDiameter );
+        }
+        else
+        {
+            $( '#base-small-diameter' ).val( '' );                        
+            hasMissingParameter = true;
+        }        
+
+        if( typeof baseHeight !== typeof undefined && baseHeight !== false )
+        {
+            $( '#base-height' ).val( baseHeight );
+        } 
+        else
+        {
+            $( '#base-height' ).val( '' );            
+            hasMissingParameter = true;
+        }
+
+        $( '#custom-base-values').toggleClass( 'hidden', !hasMissingParameter );   
+
+        update_label_parameters( '#label' );        
+        render_label( '#label' );                 
+    });
+
+    // Synchronize select with values.
+    $( '#base-preselection' ).trigger( 'change' );
 });        
         </script>
         <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/all.css" integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr" crossorigin="anonymous">
@@ -352,6 +400,11 @@ $( document ).ready( function( e )
 
     #overlay
     {      
+        display: none;
+    }
+
+    .hidden
+    {
         display: none;
     }
 }
@@ -505,16 +558,26 @@ $( document ).ready( function( e )
                 </div>
                 <h2>Base parameters</h2>
                 <div>
-                    <input type="text" id="base-big-diameter" name="base_big_diameter" value="25.4" placeholder="25.4"/>
-                    <label for="text">Base's big diameter (bottom), in mm.</label>
-                </div>                                     
-                <div>
-                    <input type="text" id="base-small-diameter" name="base_small_diameter" value="23.0" placeholder="23"/>
-                    <label for="text">Base's small diameter (top), in mm.</label>
-                </div>  
-                <div>
-                    <input type="text" id="base-height" name="base_height" value="3.2" placeholder="3.2"/>
-                    <label for="text">Base's height, in mm.</label>
+                    <select id="base-preselection">
+                        <option data-base-big-diameter="25.4" data-base-small-diameter="23.6" data-base-height="3.2">GW's 25mm/1" base, 1999</option>                        
+                        <option data-base-big-diameter="25.4" data-base-small-diameter="23.4" data-base-height="3.2" selected>GW's 25mm/1" base, 2006</option>
+                        <option>Custom</option>
+                    </select>
+                    <label for="base-preselection">Select your base</label>
+                </div>
+                <div id="custom-base-values">
+                    <div>
+                        <input type="text" id="base-big-diameter" name="base_big_diameter" value="25.4" placeholder="25.4"/>
+                        <label for="text">Base's big diameter (bottom), in mm.</label>
+                    </div>                                     
+                    <div>
+                        <input type="text" id="base-small-diameter" name="base_small_diameter" value="23.0" placeholder="23"/>
+                        <label for="text">Base's small diameter (top), in mm.</label>
+                    </div>  
+                    <div>
+                        <input type="text" id="base-height" name="base_height" value="3.2" placeholder="3.2"/>
+                        <label for="text">Base's height, in mm.</label>
+                    </div>
                 </div>
                 <h2>Text parameters</h2> 
                 <div>

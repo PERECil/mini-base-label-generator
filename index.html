@@ -53,6 +53,7 @@ $( document ).ready( function( e )
         let text = $( element ).attr( 'data-text' );
         let kerning = parseFloat( $( element ).attr( 'data-kerning' ) );
         let padding = parseFloat(  $( element ).attr( 'data-padding' ) ); 
+        let position = parseFloat(  $( element ).attr( 'data-position' ) );         
 
         let backgroundColor = $( element ).attr( 'data-background-color' );
         let foregroundColor = $( element ).attr( 'data-foreground-color' );                
@@ -67,8 +68,6 @@ $( document ).ready( function( e )
 
         // textSize in px
         let textSize = compute_width( text, fontFace, ( thickness / 4 ) + 'mm' );
-
-        console.log( textSize );
 
         // textSize in mm, using the "magic" constant
         let textSizeMm = textSize; // * 3.543307;
@@ -159,6 +158,8 @@ $( document ).ready( function( e )
         contents += '</g>';
         
         document.getElementById( 'label' ).innerHTML = contents;
+
+        // console.log( outerRingRadius, position );        
     };
 
     var update_label_parameters = function( element )
@@ -176,6 +177,7 @@ $( document ).ready( function( e )
         let text = $( '#text' ).val();
         let kerning = parseFloat( $( '#kerning' ).val() );
         let padding = parseFloat( $( '#padding' ).val() ); 
+        let position = parseFloat( $( '#position' ).val() );         
 
         let backgroundColor = $( '#bg-color' ).val();
         let foregroundColor = $( '#fg-color' ).val();
@@ -189,6 +191,7 @@ $( document ).ready( function( e )
         $( element ).attr( 'data-text', text );              
         $( element ).attr( 'data-kerning', kerning );        
         $( element ).attr( 'data-padding', padding );      
+        $( element ).attr( 'data-position', position );          
 
         $( element ).attr( 'data-background-color', backgroundColor );                                
         $( element ).attr( 'data-foreground-color', foregroundColor );
@@ -206,7 +209,8 @@ $( document ).ready( function( e )
         let fontFace = $( element ).attr( 'data-font-face' );
         let text = $( element ).attr( 'data-text' );              
         let kerning = parseFloat( $( element ).attr( 'data-kerning' ) );        
-        let padding = parseFloat( $( element ).attr( 'data-padding' ) );                
+        let padding = parseFloat( $( element ).attr( 'data-padding' ) );
+        let position = parseFloat( $( element ).attr( 'data-position' ) );                       
                      
         let backgroundColor = $( element ).attr( 'data-background-color' );                                
         let foregroundColor = $( element ).attr( 'data-foreground-color' );
@@ -219,6 +223,7 @@ $( document ).ready( function( e )
         $( '#text' ).val( text );
         $( '#kerning' ).val( kerning );
         $( '#padding' ).val( padding );
+        $( '#position' ).val( position );        
 
         $( '#bg-color' ).val( backgroundColor );
         $( '#fg-color' ).val( foregroundColor );
@@ -233,8 +238,6 @@ $( document ).ready( function( e )
     // Edit button
     $( '#labels' ).on( 'click', '.edit', function( e )
     {
-        console.log( $( this ).closest( '.label-container' ).index() );
-
         $( '#controls' ).attr( 'element-index',  $( this ).closest( '.label-container' ).index() );
 
         restore_label_parameters( $( this ).closest( '.label-container' ).find( 'svg' ) );
@@ -310,7 +313,7 @@ $( document ).ready( function( e )
     });
 
     // Hook when changing the kerning, update the label.
-    $( '#kerning, #padding' ).on( 'mousedown mousemove change', function( e )
+    $( '#kerning, #padding, #position' ).on( 'mousedown mousemove change', function( e )
     {
         update_label_parameters( '#label' );        
         render_label( '#label' );        
@@ -569,7 +572,7 @@ $( document ).ready( function( e )
         </div>
         <div id="overlay">
             <form id="controls">
-                <div class="svg-container">
+                <div class="svg-container" id="svg-container">
                     <svg id="label"></svg>            
                 </div>
                 <h2>Base parameters</h2>
@@ -619,11 +622,15 @@ $( document ).ready( function( e )
                     <label for="text">Text</label>
                 </div>               
                 <div>
-                        <input type="range" id="padding" name="volume" min="0" max="5" step="0.05" />
-                        <label for="padding">Padding</label>
-                    </div>               
+                    <input type="range" id="position" name="position" min="-10" max="10" step="0.05" />
+                    <label for="position">Font position</label>
+                </div>                  
                 <div>
-                    <input type="range" id="kerning" name="volume" min="0" max="5" step="0.05" />
+                        <input type="range" id="padding" name="padding" min="0" max="5" step="0.05" />
+                        <label for="padding">Padding</label>
+                </div>               
+                <div>
+                    <input type="range" id="kerning" name="kerning" min="0" max="5" step="0.05" />
                     <label for="kerning">Kerning</label>
                 </div>
                 <div class="button-group">

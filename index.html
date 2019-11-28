@@ -29,6 +29,13 @@ $( document ).ready( function( e )
         return $( '#size-computer' ).width();
     };
 
+    var uuidv4 = function() {
+        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+            var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+            return v.toString(16);
+        });
+    };
+
     var render_label = function( element )
     {
         // Fetch params from the form
@@ -122,6 +129,8 @@ $( document ).ready( function( e )
         // Sets the view box property to the size of the label, in mm.
         // $( '#label' ).attr( 'viewBox', viewBoxProperty );
 
+        let uuid = uuidv4();
+
         let contents = '';
 
         // Scale from https://stackoverflow.com/questions/30806126/drawing-svg-path-and-polygon-in-cm
@@ -136,18 +145,19 @@ $( document ).ready( function( e )
             contents += '   <circle cx="' + x_offset + '" cy="0" r="' + outerRingRadius + '" stroke-dasharray="' + outerDashFill + ' ' + outerDashUnfill + '" stroke="red" stroke-width="0.25" fill="none" transform="scale(-1,1)" />';        
             contents += '   <line x1="' + innerCanvasWidth + '" x2="' + innerCanvasWidth + '" y1="-1000" y2="+1000" stroke-width="0.25" stroke="grey" fill="none" />';            
             contents += '   <line x1="' + outerCanvasWidth + '" x2="' + outerCanvasWidth + '" y1="-1000" y2="+1000" stroke-width="0.25" stroke="grey" fill="none" />';                                                            
-            contents += '   <path id="curve" d="' + circle_to_path( -x_offset, 0, outerRingRadius - ( thickness / 8 ) ) + '" stroke="white" stroke-width="0.25" fill="none"></path>';                        
+            contents += '   <circle cx="' + x_offset + '" cy="0" r="5" stroke-dasharray="' + innerDashFill + ' ' + innerDashUnfill + '" stroke="red" stroke-width="0" fill="red" transform="scale(-1,1)" />';                
+            contents += '   <path id="curve-' + uuid + '" d="' + circle_to_path( position, 0, outerRingRadius + position ) + '" stroke="purple" stroke-width="0.25" fill="none" transform="translate(' + - ( x_offset + position ) + ',0)"></path>';                        
         }
         else
         {
-            contents += '   <path id="curve" d="' + circle_to_path( -x_offset, 0, outerRingRadius - ( thickness / 8 ) ) + '" fill="none"></path>';            
+            contents += '   <path id="curve-' + uuid + '" d="' + circle_to_path( position, 0, outerRingRadius + position ) + '" fill="none" transform="translate(' + - ( x_offset + position ) + ',0)"></path>';            
         }
 
-        contents += '   <text lengthAdjust="spacing" textLength="' + fullTextSizeMm + '" fill="' + foregroundColor + '" style="font-family: ' + fontFace + '; font-size: ' + ( thickness / 4 ) + 'mm;">';
-        contents += '       <textPath xlink:href="#curve" startOffset="' + ( padding + kerning ) + '">' + text + '</textPath>';
+        contents += '   <text lengthAdjust="spacing" textLength="' + fullTextSizeMm + '" fill="' + foregroundColor + '" style="font-family: ' + fontFace + '; font-size: ' + ( thickness / 4 ) + 'mm; color: red">';
+        contents += '       <textPath xlink:href="#curve-' + uuid + '" startOffset="' + ( padding + kerning ) + '">' + text + '</textPath>';
         contents += '   </text>';
         contents += '</g>';
-
+        
         document.getElementById( 'label' ).innerHTML = contents;
     };
 
